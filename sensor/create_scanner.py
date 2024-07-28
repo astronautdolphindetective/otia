@@ -1,6 +1,5 @@
 import bpy
 
-
 lidar_data = {
     "livox_mid40": {
         "name": "Livox Mid 40",
@@ -64,8 +63,6 @@ lidar_data = {
     }
 }
 
-
-
 class CreateScannerOperator(bpy.types.Operator):
     bl_idname = "object.create_scanner"
     bl_label = "Create Scanner"
@@ -86,15 +83,32 @@ class CreateScannerOperator(bpy.types.Operator):
                 prop_name = f"lidar_{param_name}"
                 params[param_name] = getattr(scene, prop_name)
 
+            # Retrieve additional properties
+            sensor_name = scene.sensor_name
+            sensor_mode = scene.sensor_mode
+
             # Example: Print the parameters to the console
             print("Creating scanner with parameters:", params)
+            print("Sensor Name:", sensor_name)
+            print("Sensor Mode:", sensor_mode)
 
-        # Create the scanner base (this part is unchanged)
+        # Create the scanner base
         bpy.ops.object.select_all(action='DESELECT')
         bpy.ops.object.empty_add(type='ARROWS', location=(0, 0, 0))
 
         scanner_base = context.active_object
-        scene.ray_scanner_base = scanner_base
+        scanner_base.name = sensor_name if sensor_name else "New Scanner"
+
+        # Create a custom collection if it doesn't exist
+        if "Sensors" not in bpy.data.collections:
+            sensors_collection = bpy.data.collections.new("Sensors")
+            bpy.context.scene.collection.children.link(sensors_collection)
+        else:
+            sensors_collection = bpy.data.collections.get("Sensors")
+
+        # Add the scanner to the collection
+        sensors_collection.objects.link(scanner_base)
+        context.collection.objects.unlink(scanner_base)
 
         return {'FINISHED'}
 
@@ -103,4 +117,25 @@ def register_scanner_creator():
 
 def unregister_scanner_creator():
     bpy.utils.unregister_class(CreateScannerOperator)
-    del bpy.types.Scene.CreateScannerOperator
+    del bpy.types.Scene.sensor_name
+
+# Add this property for naming the scanner
+def register_properties():
+    bpy.types.Scene.sensor_name = bpy.props.StringProperty(
+        name="Sensor Name",
+        description="Name of the sensor",
+        default="New Scanner"
+    )
+
+def unregister_properties():
+    del bpy.types.Scene.sensor_name
+
+# Call register_properties when registering
+def register():
+    register_properties()
+    register_scanner_creator()
+
+# Call unregister_properties when unregistering
+def unregister():
+    unregister_scanner_creator()
+    unregister_properties()
