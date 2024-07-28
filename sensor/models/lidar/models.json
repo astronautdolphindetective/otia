@@ -1,0 +1,62 @@
+{
+    "livox_mid40": {
+        "name": "Livox Mid 40",
+        "description": "blablabla",
+        "parameters": {
+            "max_distance": {
+                "type": "float",
+                "description": "Maximum Distance",
+                "default": 10.0,
+                "min": 0.1
+            },
+            "scans": {
+                "type": "int",
+                "description": "Number of Scans",
+                "default": 5,
+                "min": 1
+            },
+            "density": {
+                "type": "int",
+                "description": "Point Density",
+                "default": 10,
+                "min": 1
+            },
+            "k": {
+                "type": "int",
+                "description": "Some Int Parameter",
+                "default": 2,
+                "min": 0
+            }
+        }
+    },
+    "velodyne_hdl": {
+        "name": "Velodyne HDL64",
+        "description": "blablabla",
+        "parameters": {
+            "max_distance": {
+                "type": "float",
+                "description": "Maximum Distance",
+                "default": 20.0,
+                "min": 0.1
+            },
+            "scans": {
+                "type": "int",
+                "description": "Number of Scans",
+                "default": 10,
+                "min": 1
+            },
+            "density": {
+                "type": "int",
+                "description": "Point Density",
+                "default": 20,
+                "min": 1
+            },
+            "k": {
+                "type": "int",
+                "description": "Some Int Parameter",
+                "default": 3,
+                "min": 0
+            }
+        }
+    }
+}
