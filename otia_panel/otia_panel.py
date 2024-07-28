@@ -1,10 +1,10 @@
 import bpy
 
-# JSON data
+# JSON data for LiDAR models
 lidar_data = {
     "livox_mid40": {
         "name": "Livox Mid 40",
-        "description": "blablabla",
+        "description": "Livox Mid 40 description",
         "parameters": {
             "max_distance": {
                 "type": "float",
@@ -26,7 +26,7 @@ lidar_data = {
             },
             "k": {
                 "type": "int",
-                "description": "A",
+                "description": "Parameter K",
                 "default": 2,
                 "min": 0
             }
@@ -34,7 +34,7 @@ lidar_data = {
     },
     "velodyne_hdl": {
         "name": "Velodyne HDL64",
-        "description": "blablabla",
+        "description": "Velodyne HDL64 description",
         "parameters": {
             "max_distance": {
                 "type": "float",
@@ -56,7 +56,7 @@ lidar_data = {
             },
             "k": {
                 "type": "int",
-                "description": "K",
+                "description": "Parameter K",
                 "default": 3,
                 "min": 0
             }
@@ -64,43 +64,17 @@ lidar_data = {
     }
 }
 
-# Define the scanner item
+# Define the ScannerItem PropertyGroup
 class ScannerItem(bpy.types.PropertyGroup):
     name: bpy.props.StringProperty(name="Name")
     type: bpy.props.StringProperty(name="Type")
 
-# Define the scanner list UI
+# Define the ScannerList UIList
 class OTIA_UL_ScannerList(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         layout.label(text=item.name)
 
-class Base_Panel(bpy.types.Panel):
-    bl_label = "Base"
-    bl_idname = "OBJECT_PT_base_panel"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = 'Otia'
-
-    def draw(self, context):
-        layout = self.layout
-        scene = context.scene
-
-        layout.label(text="Bases")
-        layout.prop(scene, "show_accordion_settings", text="Create Base", toggle=True)
-
-        if scene.show_accordion_settings:
-            box = layout.box()
-            box.prop(scene, "scanner_selection_dropdown", text="Select Option")
-            box.operator("object.create_scanner", text="Create Base")
-            box.prop(scene, "ray_scanner_path", text="Path")
-            box.operator("object.follow_path", text="Follow Path")
-
-            box.prop(scene, "ray_dist", text="Max Distance")
-            box.prop(scene, "ray_scans", text="Scans")
-            box.prop(scene, "ray_density", text="Points per scan")
-            box.prop(scene, "ray_k", text="Leaves")
-            box.operator("object.custom_raycast_operator", text="Perform Raycast")
-
+# Define the Panel to create and display sensors
 class Sensor_Panel(bpy.types.Panel):
     bl_label = "Sensor"
     bl_idname = "OBJECT_PT_sensor_panel"
@@ -113,17 +87,20 @@ class Sensor_Panel(bpy.types.Panel):
         scene = context.scene
 
         layout.label(text="Sensors")
-        layout.template_list("OTIA_UL_MockDataList", "", scene, "mock_data_collection", scene, "mock_data_index")
 
+        # Template list for displaying created sensors
+        layout.template_list("OTIA_UL_ScannerList", "", scene, "scanner_list", scene, "scanner_index")
+
+        # Toggle to show sensor creation settings
         layout.prop(scene, "show_sensor_selection", text="Create sensor", toggle=True)
 
         if scene.show_sensor_selection:
             box = layout.box()
-            box.prop(scene, "sensor_selection_dropdown", text="Type")
+            box.prop(scene, "sensor_selection_dropdown", text="Sensor Type")
 
             selected_sensor = scene.sensor_selection_dropdown
             if selected_sensor == 'LIDAR':
-                box.prop(scene, "lidar_selection_dropdown", text="Model")
+                box.prop(scene, "lidar_selection_dropdown", text="LiDAR Model")
                 selected_lidar = scene.lidar_selection_dropdown
                 if selected_lidar:
                     parameters = lidar_data[selected_lidar]["parameters"]
@@ -148,18 +125,6 @@ class Otia_Panel(bpy.types.Panel):
         layout.prop(scene, "simulate_file_path", text="Save Path")
         layout.operator("object.simulate_and_save", text="Simulate").file_path = scene.simulate_file_path
 
-class ScannerListPanel(bpy.types.Panel):
-    bl_label = "Scanner List"
-    bl_idname = "OBJECT_PT_scanner_list"
-    bl_space_type = 'VIEW_3D'
-    bl_region_type = 'UI'
-    bl_category = 'Otia'
-
-    def draw(self, context):
-        layout = self.layout
-        scene = context.scene
-        layout.template_list("OTIA_UL_ScannerList", "", scene, "scanner_list", scene, "scanner_index")
-
 class CreateScannerOperator(bpy.types.Operator):
     bl_idname = "object.create_scanner"
     bl_label = "Create Scanner"
@@ -174,29 +139,26 @@ class CreateScannerOperator(bpy.types.Operator):
             params = {param_name: getattr(scene, f"lidar_{param_name}") for param_name in parameters.keys()}
             sensor_name = scene.sensor_name
 
-        bpy.ops.object.select_all(action='DESELECT')
-        bpy.ops.object.empty_add(type='ARROWS', location=(0, 0, 0))
-        scanner_base = context.active_object
-        scanner_base.name = sensor_name if sensor_name else "New Scanner"
+            # Create a new scanner item
+            scanner_item = scene.scanner_list.add()
+            scanner_item.name = sensor_name if sensor_name else "New Scanner"
+            scanner_item.type = selected_lidar
 
-        if "Sensors" not in bpy.data.collections:
-            sensors_collection = bpy.data.collections.new("Sensors")
-            bpy.context.scene.collection.children.link(sensors_collection)
-        else:
-            sensors_collection = bpy.data.collections.get("Sensors")
+            # Create and configure the scanner object in the scene
+            bpy.ops.object.select_all(action='DESELECT')
+            bpy.ops.object.empty_add(type='ARROWS', location=(0, 0, 0))
+            scanner_base = context.active_object
+            scanner_base.name = sensor_name if sensor_name else "New Scanner"
 
-        sensors_collection.objects.link(scanner_base)
-        context.collection.objects.unlink(scanner_base)
+            if "Sensors" not in bpy.data.collections:
+                sensors_collection = bpy.data.collections.new("Sensors")
+                bpy.context.scene.collection.children.link(sensors_collection)
+            else:
+                sensors_collection = bpy.data.collections.get("Sensors")
 
-        if "Scanners" not in bpy.data.collections:
-            scanner_list_collection = bpy.data.collections.new("Scanners")
-            bpy.context.scene.collection.children.link(scanner_list_collection)
-        else:
-            scanner_list_collection = bpy.data.collections.get("Scanners")
-
-        scanner_item = scene.scanner_list.add()
-        scanner_item.name = sensor_name if sensor_name else "New Scanner"
-
+            sensors_collection.objects.link(scanner_base)
+            context.collection.objects.unlink(scanner_base)
+        
         return {'FINISHED'}
 
 def register_otia_panel():
@@ -207,14 +169,8 @@ def register_otia_panel():
         subtype='FILE_PATH'
     )
 
-    bpy.types.Scene.show_accordion_settings = bpy.props.BoolProperty(
-        name="Show Additional Settings",
-        description="Toggle to show or hide additional settings",
-        default=False
-    )
-    
     bpy.types.Scene.show_sensor_selection = bpy.props.BoolProperty(
-        name="Select a sensor",
+        name="Show Sensor Selection",
         description="Toggle to show or hide sensor selection",
         default=False
     )
@@ -228,7 +184,7 @@ def register_otia_panel():
     bpy.types.Scene.lidar_selection_dropdown = bpy.props.EnumProperty(
         name="LiDAR Model",
         description="Select a LiDAR model",
-        items=[('livox_mid40', "Livox Mid 40", ""), ('velodyne_hdl', "Velodyne HDL64", "")]
+        items=[(key, value["name"], value["description"]) for key, value in lidar_data.items()]
     )
 
     bpy.types.Scene.sensor_name = bpy.props.StringProperty(
@@ -248,10 +204,8 @@ def register_otia_panel():
     )
 
     for lidar in lidar_data.values():
-        for param_name in lidar["parameters"].keys():
+        for param_name, param_info in lidar["parameters"].items():
             prop_name = f"lidar_{param_name}"
-            param_info = lidar["parameters"][param_name]
-
             if param_info["type"] == "float":
                 setattr(bpy.types.Scene, prop_name, bpy.props.FloatProperty(
                     name=param_info["description"],
@@ -272,23 +226,18 @@ def register_otia_panel():
     bpy.types.Scene.scanner_index = bpy.props.IntProperty(name="Index")
 
     bpy.utils.register_class(CreateScannerOperator)
-    bpy.utils.register_class(Base_Panel)
     bpy.utils.register_class(Sensor_Panel)
     bpy.utils.register_class(Otia_Panel)
-    bpy.utils.register_class(ScannerListPanel)
     bpy.utils.register_class(OTIA_UL_ScannerList)
 
 def unregister_otia_panel():
     bpy.utils.unregister_class(CreateScannerOperator)
-    bpy.utils.unregister_class(Base_Panel)
     bpy.utils.unregister_class(Sensor_Panel)
     bpy.utils.unregister_class(Otia_Panel)
-    bpy.utils.unregister_class(ScannerListPanel)
     bpy.utils.unregister_class(OTIA_UL_ScannerList)
     bpy.utils.unregister_class(ScannerItem)
 
     del bpy.types.Scene.simulate_file_path
-    del bpy.types.Scene.show_accordion_settings
     del bpy.types.Scene.show_sensor_selection
     del bpy.types.Scene.sensor_selection_dropdown
     del bpy.types.Scene.lidar_selection_dropdown
@@ -296,7 +245,7 @@ def unregister_otia_panel():
     del bpy.types.Scene.sensor_mode
 
     for lidar in lidar_data.values():
-        for param_name in lidar["parameters"].keys():
+        for param_name, param_info in lidar["parameters"].items():
             prop_name = f"lidar_{param_name}"
             delattr(bpy.types.Scene, prop_name)
 
