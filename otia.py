@@ -18,7 +18,6 @@ print("sys.path after:", sys.path)
 
 from sensor.scanner_base import register_base_scanner, unregister_base_scanner
 from sensor.sensor_selection import register_sensor_selection, unregister_sensor_selection
-from sensor.create_scanner import register_scanner_creator, unregister_scanner_creator
 from otia_panel.otia_panel import register_otia_panel, unregister_otia_panel
 from output.save_data import register_datasaver, unregister_datasaver
 
@@ -38,7 +37,6 @@ def register():
     try:
         register_otia_panel()
         register_base_scanner()
-        register_scanner_creator()
         register_datasaver()
         register_sensor_selection()
     except Exception as e:
@@ -60,7 +58,6 @@ def unregister():
     try:
         unregister_otia_panel()
         unregister_base_scanner()
-        unregister_scanner_creator()
         unregister_datasaver()
         unregister_sensor_selection()
     except Exception as e:

@@ -1,4 +1,8 @@
 import bpy
+import logging
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # JSON data for LiDAR models
 lidar_data = {
@@ -56,7 +60,13 @@ lidar_data = {
             },
             "k": {
                 "type": "int",
-                "description": "Parameter K",
+                "description": "XXXXXX",
+                "default": 3,
+                "min": 0
+            },
+            "X": {
+                "type": "int",
+                "description": "XXXXXX",
                 "default": 3,
                 "min": 0
             }
@@ -107,6 +117,8 @@ class CreateScannerOperator(bpy.types.Operator):
         if selected_lidar:
             parameters = lidar_data[selected_lidar]["parameters"]
             params = {param_name: getattr(scene, f"lidar_{param_name}") for param_name in parameters.keys()}
+            for p in params:
+                logger.info(p)
             sensor_name = scene.sensor_name
 
             # Create the scanner base
@@ -199,6 +211,3 @@ def unregister_otia_panel():
     bpy.utils.unregister_class(Sensor_Panel)
     bpy.utils.unregister_class(CreateScannerOperator)
     unregister_properties()
-
-if __name__ == "__main__":
-    register()
