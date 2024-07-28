@@ -78,8 +78,6 @@ class Base_Panel(bpy.types.Panel):
         scene = context.scene
 
         layout.label(text="Bases")
-        layout.template_list("OTIA_UL_MockDataList", "", scene, "mock_data_collection", scene, "mock_data_index")
-
         layout.prop(scene, "show_accordion_settings", text="Create Base", toggle=True)
 
         if scene.show_accordion_settings:
@@ -125,6 +123,7 @@ class Sensor_Panel(bpy.types.Panel):
                         prop_name = f"lidar_{param_name}"
                         box.prop(scene, prop_name, text=param_info["description"])
                 box.operator("object.create_scanner", text="Create Scanner")
+
 
 class Otia_Panel(bpy.types.Panel):
     bl_label = "Simulate"
