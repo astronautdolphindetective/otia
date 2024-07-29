@@ -3,7 +3,11 @@ import numpy as np
 def logit(x):
     return np.log(x / (1 - x))
 
-def livox_mid_40(scans, density, k, current_frame):
+def livox_mid_40(current_frame, params):
+
+    scans = params["scans"]
+    density = params["density"]
+    k = params["k"]
 
     angle = 38.4 / 2
     radius = np.tan(np.radians(angle))

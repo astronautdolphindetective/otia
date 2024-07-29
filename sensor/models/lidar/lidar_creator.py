@@ -16,11 +16,18 @@ if str(project_root) not in sys.path:
 print("sys.path after:", sys.path)
 
 #from sensor.models.lidar.scanner_base import register_base_scanner, unregister_base_scanner
-from sensor.models.lidar.lidar_functionality import livox_mid_40
+from sensor.models.lidar.lidar_functionality import *
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+functions = {
+    "livox_mid40": livox_mid_40
+}
+
+
+
+#TODO: rewrite so this can be read from file
 lidar_data = {
     "livox_mid40": {
         "name": "Livox Mid 40",
@@ -90,7 +97,9 @@ lidar_data = {
     }
 }
 
-def create_custom_raycast_operator(scanner_name, parameters):
+def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
+    logger.info("parameters %s", parameters)
+    logger.info("selected lidar %s", selected_lidar)
     class CustomRaycastOperator(bpy.types.Operator):
         bl_idname = f"object.custom_raycast_{scanner_name}"
         bl_label = f"Custom Raycast {scanner_name}"
@@ -116,24 +125,10 @@ def create_custom_raycast_operator(scanner_name, parameters):
             bpy.context.view_layer.update()
 
             # Custom parameters -> should be set when object is called
-            """
-            max_distance = parameters["max_distance"]["default"]
-            scans = parameters["scans"]["default"]
-            density = parameters["density"]["default"]
-            k = parameters["k"]["default"]
-            """
-            max_distance = 100
-            scans = 50 
-            density = 3000
-            k = 6 
 
-            logger.info("Performing scan with parameters: max_distance=%f, scans=%d, density=%d, k=%d",
-                        max_distance, scans, density, k)
-
-
-            #function should be set when object is called
+            max_distance = parameters['max_distance']
             current_frame = bpy.context.scene.frame_current
-            res = livox_mid_40(scans, density, k, current_frame)
+            res = functions[selected_lidar](current_frame, parameters)
 
             rotation_matrix = world_matrix.to_3x3()
             hit_locations = []
@@ -195,8 +190,6 @@ class CreateScannerOperator(bpy.types.Operator):
         if selected_lidar:
             parameters = lidar_data[selected_lidar]["parameters"]
             params = {param_name: getattr(scene, f"lidar_{param_name}") for param_name in parameters.keys()}
-            for p in params:
-                logger.info(p)
             sensor_name = scene.sensor_name
 
             # Create the scanner base
@@ -217,8 +210,7 @@ class CreateScannerOperator(bpy.types.Operator):
             context.collection.objects.unlink(scanner_base)
 
             # Create a custom raycast operator for the new scanner
-            logger.info("creating custom raycast operator")
-            create_custom_raycast_operator(sensor_name, parameters)
+            create_custom_raycast_operator(sensor_name, params, selected_lidar)
 
             # Update the UI
             context.area.tag_redraw()

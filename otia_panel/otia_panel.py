@@ -93,9 +93,6 @@ class TriggerAllScansOperator(bpy.types.Operator):
 
         # Loop through all objects in the LiDAR collection
 
-        for e in dir(bpy.ops.object):
-            logger.info("e: %s", e)
-
         for obj in lidar_collection.objects:
             if obj.type == 'EMPTY':
                 operator_idname = f"object.custom_raycast_{obj.name}"
