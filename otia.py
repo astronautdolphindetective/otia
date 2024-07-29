@@ -19,7 +19,6 @@ print("sys.path after:", sys.path)
 #from sensor.models.lidar.scanner_base import register_base_scanner, unregister_base_scanner
 from sensor.sensor_selection import register_sensor_selection, unregister_sensor_selection
 from otia_panel.otia_panel import register_otia_panel, unregister_otia_panel
-from output.save_data import register_datasaver, unregister_datasaver
 from sensor.models.lidar.lidar_creator import register_create_scanner, unregister_create_scanner
 from sensor.models.cam.camera_creator import regist_camera_creator
 
@@ -41,7 +40,6 @@ def register():
         register_create_scanner()
         register_otia_panel()
         #register_base_scanner()
-        register_datasaver()
         register_sensor_selection()
     except Exception as e:
         logger.error("Error during registration: %s", e)
@@ -63,7 +61,6 @@ def unregister():
         unregister_create_scanner()
         unregister_otia_panel()
         #unregister_base_scanner()
-        unregister_datasaver()
         unregister_sensor_selection()
     except Exception as e:
         logger.error("Error during unregistration: %s", e)

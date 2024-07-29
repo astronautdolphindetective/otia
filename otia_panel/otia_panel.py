@@ -62,6 +62,22 @@ class TriggerAllScansOperator(bpy.types.Operator):
 
         return {'FINISHED'}
 
+class SetFolderPathOperator(bpy.types.Operator):
+    bl_idname = "object.set_folder_path"
+    bl_label = "Set Folder Path"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    directory: bpy.props.StringProperty(subtype="DIR_PATH")
+
+    def execute(self, context):
+        context.scene.folder_path = self.directory
+        logger.info(f"Folder path set to: {self.directory}")
+        return {'FINISHED'}
+
+    def invoke(self, context, event):
+        context.window_manager.fileselect_add(self)
+        return {'RUNNING_MODAL'}
+
 
 class ControlPanel(bpy.types.Panel):
     bl_label = "Control Panel"
@@ -73,7 +89,10 @@ class ControlPanel(bpy.types.Panel):
     def draw(self, context):
         layout = self.layout
         layout.label(text="Control Panel")
-        layout.operator("object.trigger_all_scans", text="Scan")
+        layout.operator("object.trigger_all_scans", text="Single Scan")
+        layout.prop(context.scene, "folder_path", text="Folder Path")
+        layout.operator("object.set_folder_path", text="Select Output Folder")
+
 
 
 # Define the Panel to create and display sensors
@@ -124,6 +143,13 @@ class SensorPanel(bpy.types.Panel):
             box.operator("camera.create_update")
 
 def register_properties():
+
+    bpy.types.Scene.folder_path = bpy.props.StringProperty(
+        name="Folder Path",
+        description="Path to save files",
+        default=str(project_root)
+    )
+
     bpy.types.Scene.sensor_selection_dropdown = bpy.props.EnumProperty(
         name="Sensor Type",
         description="Select a sensor type",
@@ -176,9 +202,11 @@ def register_otia_panel():
     bpy.utils.register_class(TriggerAllScansOperator)
     bpy.utils.register_class(ControlPanel)
     bpy.utils.register_class(SensorPanel)
+    bpy.utils.register_class(SetFolderPathOperator)
 
 def unregister_otia_panel():
     bpy.utils.unregister_class(SensorPanel)
     bpy.utils.unregister_class(TriggerAllScansOperator)
     bpy.utils.unregister_class(ControlPanel)
+    bpy.utils.unregister_class(SetFolderPathOperator)
     unregister_properties()

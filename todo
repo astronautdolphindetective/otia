@@ -1,9 +1,7 @@
 attach to base
 create base
 create path based on ground
-attach objects to base?
 automatic render camera
 implement other scanner to test for parameters
-parameters should be handed to customscanner
 create simulation function
 create folder selecetion where the files are saved to

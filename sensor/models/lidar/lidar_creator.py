@@ -40,6 +40,24 @@ def get_lidar_parameters():
 
 lidar_data = get_lidar_parameters()
 
+
+
+def save_hit_locations_as_numpy(hit_locations, folder_path, file_name="hit_locations.npy"):
+    
+    try:
+        Path(folder_path).mkdir(parents=True, exist_ok=True)
+
+        hit_locations_array = np.array([loc.to_tuple() for loc in hit_locations])
+
+        file_path = os.path.join(folder_path, file_name)
+
+        np.save(file_path, hit_locations_array)
+        logger.info("Saved hit locations to %s", file_path)
+    except Exception as e:
+        logger.error("Failed to save hit locations: %s", str(e))
+
+
+
 def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
 
     class CustomRaycastOperator(bpy.types.Operator):
@@ -53,13 +71,19 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
         def perform_scan(self, context):
             logger.info("Scanning the scene")
             scene = context.scene
+            outpath = None
+
+            try:
+                outpath = context.scene.folder_path
+            except Exception as e:
+                logger.info("%s", e)
+
             depsgraph = bpy.context.evaluated_depsgraph_get()
 
             scanner_base = scene.objects.get(scanner_name)
             world_matrix = scanner_base.matrix_world
             position = world_matrix.translation
- 
-            
+
             if scanner_base is None or scanner_base.type != 'EMPTY':
                 self.report({'ERROR'}, "No active empty object as scanner base")
                 return {'CANCELLED'}
@@ -84,14 +108,26 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
                     hit_locations.append(Vector(loc_relative))
 
             logger.info("Generated %d hit locations", len(hit_locations))
+
+            save_hit_locations_as_numpy(hit_locations, outpath, f"{scanner_name}{current_frame}")
+
             self.create_points(hit_locations, scanner_base)
 
         def create_points(self, locations, scanner_base):
-            mesh = bpy.data.meshes.new(name="RaycastPoints")
-            obj = bpy.data.objects.new("RaycastPoints", mesh)
+            # Ensure the "Scans" collection exists
+            scans_collection = bpy.data.collections.get("Scans")
+            if not scans_collection:
+                scans_collection = bpy.data.collections.new("Scans")
+                bpy.context.scene.collection.children.link(scans_collection)
 
-            scene = bpy.context.scene
-            scene.collection.objects.link(obj)
+            # Delete old points with the same name
+            for obj in list(scans_collection.objects):
+                if obj.name.startswith(f"{scanner_name}"):
+                    bpy.data.objects.remove(obj, do_unlink=True)
+
+            mesh = bpy.data.meshes.new(name=f"{scanner_name}")
+            obj = bpy.data.objects.new(f"{scanner_name}", mesh)
+            scans_collection.objects.link(obj)
 
             bm = bmesh.new()
             for loc in locations:
@@ -107,10 +143,12 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
 
         def clear_points(self, context):
             scene = context.scene
-            for obj in list(scene.objects):
-                if obj.name.startswith("RaycastPoints"):
-                    bpy.data.objects.remove(obj, do_unlink=True)
-            logger.info("Cleared previous point cloud objects")
+            scans_collection = bpy.data.collections.get("Scans")
+            if scans_collection:
+                for obj in list(scans_collection.objects):
+                    if obj.name.startswith("RaycastPoints"):
+                        bpy.data.objects.remove(obj, do_unlink=True)
+                logger.info("Cleared previous point cloud objects")
 
     # Register the operator class
     bpy.utils.register_class(CustomRaycastOperator)
