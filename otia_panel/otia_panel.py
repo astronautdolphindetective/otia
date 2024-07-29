@@ -1,81 +1,37 @@
 import bpy
+import os
+import json
+import bmesh
 import logging
+import numpy as np
+from math import pi, sin, cos
+from mathutils import Vector
+from pathlib import Path
+import sys
 
+path = Path(bpy.data.filepath).parent
+project_root = path / "otia"
 
+if str(project_root) not in sys.path:
+    sys.path.append(str(project_root))
+
+print("sys.path after:", sys.path)
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-# JSON data for LiDAR models
-lidar_data = {
-    "livox_mid40": {
-        "name": "Livox Mid 40",
-        "description": "Livox Mid 40 description",
-        "parameters": {
-            "max_distance": {
-                "type": "float",
-                "description": "Maximum Distance",
-                "default": 10.0,
-                "min": 0.1
-            },
-            "scans": {
-                "type": "int",
-                "description": "Number of Scans",
-                "default": 5,
-                "min": 1
-            },
-            "density": {
-                "type": "int",
-                "description": "Point Density",
-                "default": 10,
-                "min": 1
-            },
-            "k": {
-                "type": "int",
-                "description": "Parameter K",
-                "default": 2,
-                "min": 0
-            }
-        }
-    },
-    "velodyne_hdl": {
-        "name": "Velodyne HDL64",
-        "description": "Velodyne HDL64 description",
-        "parameters": {
-            "max_distance": {
-                "type": "float",
-                "description": "Maximum Distance",
-                "default": 20.0,
-                "min": 0.1
-            },
-            "scans": {
-                "type": "int",
-                "description": "Number of Scans",
-                "default": 10,
-                "min": 1
-            },
-            "density": {
-                "type": "int",
-                "description": "Point Density",
-                "default": 20,
-                "min": 1
-            },
-            "k": {
-                "type": "int",
-                "description": "XXXXXX",
-                "default": 3,
-                "min": 0
-            },
-            "X": {
-                "type": "int",
-                "description": "XXXXXX",
-                "default": 3,
-                "min": 0
-            }
-        }
-    }
-}
+def get_lidar_parameters():
+    filepath = os.path.join(project_root, "sensor","models", "lidar", "models.json")
+    try:
+        with open(filepath, 'r') as file:
+            data = json.load(file)
+        return data
+    except Exception as e:
+        logger.info("%s", e)
+        print(f"An error occurred: {e}")
+        return None
 
+lidar_data = get_lidar_parameters()
 
 class TriggerAllScansOperator(bpy.types.Operator):
     bl_idname = "object.trigger_all_scans"
