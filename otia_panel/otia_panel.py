@@ -49,18 +49,23 @@ def render_cameras(scene):
     # Render all frames for each camera
     for obj in camera_collection.objects:
         if obj.type == 'CAMERA':
+            # Create a directory for the current camera
+            camera_folder = os.path.join(output_folder, obj.name)
+            os.makedirs(camera_folder, exist_ok=True)
+
             # Set the current camera
             scene.camera = obj
 
             # Render each frame
             for frame_number in range(scene.frame_start, scene.frame_end + 1):
                 scene.frame_set(frame_number)
-                render_path = os.path.join(output_folder, f"{obj.name}_frame_{frame_number}.png")
+                render_path = os.path.join(camera_folder, f"{obj.name}_frame_{frame_number}.png")
                 scene.render.filepath = render_path
                 
                 # Perform rendering
                 logger.info(f"Rendering camera: {obj.name} at frame {frame_number} to {render_path}")
                 bpy.ops.render.render(write_still=True)
+
 
 def simulate(scene):
     # Ensure the simulation handler runs properly

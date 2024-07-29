@@ -1,6 +1,6 @@
 attach to base
 create base
 create path based on ground
-automatic render camera
 implement other scanner to test for parameters
 create folder selecetion where the files are saved to
+create render settings for the cameras

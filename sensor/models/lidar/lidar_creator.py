@@ -4,7 +4,6 @@ import json
 import bmesh
 import logging
 import numpy as np
-from math import pi, sin, cos
 from mathutils import Vector
 from pathlib import Path
 import sys
@@ -17,7 +16,6 @@ if str(project_root) not in sys.path:
 
 print("sys.path after:", sys.path)
 
-#from sensor.models.lidar.scanner_base import register_base_scanner, unregister_base_scanner
 from sensor.models.lidar.lidar_functionality import *
 
 logging.basicConfig(level=logging.DEBUG)
@@ -28,7 +26,7 @@ functions = {
 }
 
 def get_lidar_parameters():
-    filepath = os.path.join(project_root, "sensor","models", "lidar", "models.json")
+    filepath = os.path.join(project_root, "sensor", "models", "lidar", "models.json")
     try:
         with open(filepath, 'r') as file:
             data = json.load(file)
@@ -40,10 +38,7 @@ def get_lidar_parameters():
 
 lidar_data = get_lidar_parameters()
 
-
-
 def save_hit_locations_as_numpy(hit_locations, folder_path, file_name="hit_locations.npy"):
-    
     try:
         Path(folder_path).mkdir(parents=True, exist_ok=True)
 
@@ -53,8 +48,7 @@ def save_hit_locations_as_numpy(hit_locations, folder_path, file_name="hit_locat
 
         np.save(file_path, hit_locations_array)
     except Exception as e:
-        pass
-
+        logger.error(f"Failed to save hit locations: {e}")
 
 def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
 
@@ -104,8 +98,9 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
                     loc_relative = world_matrix.inverted() @ loc
                     hit_locations.append(Vector(loc_relative))
 
-
-            save_hit_locations_as_numpy(hit_locations, outpath, f"{scanner_name}{current_frame}")
+            # Create a folder for the scanner if it doesn't exist
+            scanner_folder = os.path.join(outpath, scanner_name)
+            save_hit_locations_as_numpy(hit_locations, scanner_folder, f"hit_locations_frame_{current_frame}.npy")
 
             self.create_points(hit_locations, scanner_base)
 
@@ -137,7 +132,6 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
             bpy.context.view_layer.objects.active = obj
             obj.select_set(True)
 
-
         def clear_points(self, context):
             scene = context.scene
             scans_collection = bpy.data.collections.get("Scans")
@@ -149,7 +143,6 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
     # Register the operator class
     bpy.utils.register_class(CustomRaycastOperator)
     return CustomRaycastOperator
-
 
 class CreateScannerOperator(bpy.types.Operator):
     bl_idname = "object.create_scanner"
