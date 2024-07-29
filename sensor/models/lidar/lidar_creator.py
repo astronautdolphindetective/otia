@@ -4,6 +4,19 @@ import logging
 import numpy as np
 from math import pi, sin, cos
 from mathutils import Vector
+from pathlib import Path
+import sys
+
+path = Path(bpy.data.filepath).parent
+project_root = path / "otia"
+
+if str(project_root) not in sys.path:
+    sys.path.append(str(project_root))
+
+print("sys.path after:", sys.path)
+
+#from sensor.models.lidar.scanner_base import register_base_scanner, unregister_base_scanner
+from sensor.models.lidar.lidar_functionality import livox_mid_40
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -89,81 +102,54 @@ def create_custom_raycast_operator(scanner_name, parameters):
         def perform_scan(self, context):
             logger.info("Scanning the scene")
             scene = context.scene
+            depsgraph = bpy.context.evaluated_depsgraph_get()
 
             scanner_base = scene.objects.get(scanner_name)
+            world_matrix = scanner_base.matrix_world
+            position = world_matrix.translation
+ 
+            
             if scanner_base is None or scanner_base.type != 'EMPTY':
                 self.report({'ERROR'}, "No active empty object as scanner base")
                 return {'CANCELLED'}
 
             bpy.context.view_layer.update()
 
-            # Custom parameters
+            # Custom parameters -> should be set when object is called
+            """
             max_distance = parameters["max_distance"]["default"]
             scans = parameters["scans"]["default"]
             density = parameters["density"]["default"]
             k = parameters["k"]["default"]
+            """
+            max_distance = 100
+            scans = 50 
+            density = 3000
+            k = 6 
 
             logger.info("Performing scan with parameters: max_distance=%f, scans=%d, density=%d, k=%d",
                         max_distance, scans, density, k)
 
-            hit_locations = self.generate_scan(max_distance, scans, density, k, context, scanner_base)
 
-            self.create_points(hit_locations, scanner_base)
-
-        def generate_scan(self, max_distance, scans, density, k, context, scanner_base):
-            scene = context.scene
-            depsgraph = bpy.context.evaluated_depsgraph_get()
-
-            world_matrix = scanner_base.matrix_world
-            position = world_matrix.translation
-            orientation = world_matrix.to_euler()
-            orientation_degrees = (np.degrees(orientation.x), np.degrees(orientation.y), np.degrees(orientation.z))
-
-            logger.debug("Scanner Base Position: %s", position)
-            logger.debug("Scanner Base Orientation (Euler): %s radians", orientation)
-            logger.debug("Scanner Base Orientation (Degrees): %s degrees", orientation_degrees)
-
-            angle = 38.4 / 2
-            radius = np.tan(np.radians(angle))
-            a = radius / 2
-            results = []
+            #function should be set when object is called
             current_frame = bpy.context.scene.frame_current
-            start = current_frame * 2.0 * np.pi / k
-
-            start_point = position
-            logger.debug("Start point: %s", start_point)
+            res = livox_mid_40(scans, density, k, current_frame)
 
             rotation_matrix = world_matrix.to_3x3()
+            hit_locations = []
 
-            for i in range(scans):
-                p = k + i
-                vals = [self.logit(x) for x in np.linspace(0.01, 0.99, density)]
-                vals -= np.min(vals)
-                vals /= np.max(vals)
+            for e in res:
+                direction_local = Vector(e).normalized()
+                direction_world = rotation_matrix @ direction_local
 
-                for _ in range(density):
-                    lily_half = (pi / k) * 0.5 + start * (2 * pi / k)
-                    q = np.random.randint(0, 2 * k) * lily_half + lily_half * np.random.choice(vals, 1)[0]
-                    r = a * sin(start + p + q * k)
-                    x = r * cos(q)
-                    y = r * sin(q)
+                hit, loc, norm, idx, obj_hit, mw = scene.ray_cast(depsgraph, position, direction_world)
 
-                    direction_local = Vector((x, y, 1)).normalized()
-                    direction_world = rotation_matrix @ direction_local
+                if hit and (loc - position).length <= max_distance:
+                    loc_relative = world_matrix.inverted() @ loc
+                    hit_locations.append(Vector(loc_relative))
 
-                    hit, loc, norm, idx, obj_hit, mw = scene.ray_cast(depsgraph, start_point, direction_world)
-
-                    if hit and (loc - start_point).length <= max_distance:
-                        loc_relative = world_matrix.inverted() @ loc
-                        results.append(Vector(loc_relative))
-
-            logger.info("Generated %d hit locations", len(results))
-
-            return results
-
-        @staticmethod
-        def logit(x):
-            return np.log(x / (1 - x))
+            logger.info("Generated %d hit locations", len(hit_locations))
+            self.create_points(hit_locations, scanner_base)
 
         def create_points(self, locations, scanner_base):
             mesh = bpy.data.meshes.new(name="RaycastPoints")
