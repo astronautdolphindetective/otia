@@ -1,6 +1,8 @@
 import bpy
 import logging
 
+
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -74,8 +76,55 @@ lidar_data = {
     }
 }
 
+
+class TriggerAllScansOperator(bpy.types.Operator):
+    bl_idname = "object.trigger_all_scans"
+    bl_label = "Trigger All Scans"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        logger.info("Triggering all scans")
+
+        # Ensure the LiDAR collection exists
+        lidar_collection = bpy.data.collections.get("LiDAR")
+        if not lidar_collection:
+            self.report({'ERROR'}, "LiDAR collection not found")
+            return {'CANCELLED'}
+
+        # Loop through all objects in the LiDAR collection
+
+        for e in dir(bpy.ops.object):
+            logger.info("e: %s", e)
+
+        for obj in lidar_collection.objects:
+            if obj.type == 'EMPTY':
+                operator_idname = f"object.custom_raycast_{obj.name}"
+                logger.info("Triggering operator: %s", operator_idname)
+                try:
+                    # Call the operator
+                    eval(f"bpy.ops.object.custom_raycast_{obj.name}()")
+                    logger.info(f"Triggered scan for {obj.name}")
+                except Exception as e:
+                    logger.error(f"Failed to trigger scan for {obj.name}: {str(e)}")
+
+        return {'FINISHED'}
+
+
+class ControlPanel(bpy.types.Panel):
+    bl_label = "Control Panel"
+    bl_idname = "OBJECT_PT_control_panel"
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_category = 'Otia'
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="Control Panel")
+        layout.operator("object.trigger_all_scans", text="Scan")
+
+
 # Define the Panel to create and display sensors
-class Sensor_Panel(bpy.types.Panel):
+class SensorPanel(bpy.types.Panel):
     bl_label = "Sensor"
     bl_idname = "OBJECT_PT_sensor_panel"
     bl_space_type = 'VIEW_3D'
@@ -102,47 +151,24 @@ class Sensor_Panel(bpy.types.Panel):
                     prop_name = f"lidar_{param_name}"
                     box.prop(scene, prop_name, text=param_info["description"])
             box.prop(scene, "sensor_name", text="Sensor Name")
-            box.prop(scene, "sensor_mode", text="Mode")
             box.operator("object.create_scanner", text="Create Scanner")
 
-class CreateScannerOperator(bpy.types.Operator):
-    bl_idname = "object.create_scanner"
-    bl_label = "Create Scanner"
-    bl_options = {'REGISTER', 'UNDO'}
+        elif selected_sensor == 'CAM':
+            camera_settings = scene.camera_settings
 
-    def execute(self, context):
-        scene = context.scene
+            box.prop(camera_settings, "name", text="Camera Name")
+            box.prop(camera_settings, "lens")
+            box.prop(camera_settings, "sensor_width")
+            box.prop(camera_settings, "location")
+            box.prop(camera_settings, "rotation")
+            box.prop(camera_settings, "camera_type")
+            box.prop(camera_settings, "clip_start")
+            box.prop(camera_settings, "clip_end")
+            box.prop(camera_settings, "shift_x")
+            box.prop(camera_settings, "shift_y")
+            box.prop(camera_settings, "sensor_fit")
 
-        selected_lidar = scene.lidar_selection_dropdown
-        if selected_lidar:
-            parameters = lidar_data[selected_lidar]["parameters"]
-            params = {param_name: getattr(scene, f"lidar_{param_name}") for param_name in parameters.keys()}
-            for p in params:
-                logger.info(p)
-            sensor_name = scene.sensor_name
-
-            # Create the scanner base
-            bpy.ops.object.select_all(action='DESELECT')
-            bpy.ops.object.empty_add(type='ARROWS', location=(0, 0, 0))
-            scanner_base = context.active_object
-            scanner_base.name = sensor_name if sensor_name else "New Scanner"
-
-            # Create a custom collection if it doesn't exist
-            if "Sensors" not in bpy.data.collections:
-                sensors_collection = bpy.data.collections.new("Sensors")
-                bpy.context.scene.collection.children.link(sensors_collection)
-            else:
-                sensors_collection = bpy.data.collections.get("Sensors")
-
-            # Add the scanner to the collection
-            sensors_collection.objects.link(scanner_base)
-            context.collection.objects.unlink(scanner_base)
-
-            # Update the UI
-            context.area.tag_redraw()
-            context.view_layer.update()
-
-        return {'FINISHED'}
+            box.operator("camera.create_update")
 
 def register_properties():
     bpy.types.Scene.sensor_selection_dropdown = bpy.props.EnumProperty(
@@ -161,16 +187,6 @@ def register_properties():
         name="Sensor Name",
         description="Name of the sensor",
         default="New Sensor"
-    )
-
-    bpy.types.Scene.sensor_mode = bpy.props.EnumProperty(
-        name="Sensor Mode",
-        description="Select the mode of the sensor",
-        items=[
-            ('HOT', "Hot", "Sensor is in hot mode"),
-            ('COLD', "Cold", "Sensor is in cold mode")
-        ],
-        default='HOT'
     )
 
     for lidar in lidar_data.values():
@@ -204,10 +220,12 @@ def unregister_properties():
 
 def register_otia_panel():
     register_properties()
-    bpy.utils.register_class(Sensor_Panel)
-    bpy.utils.register_class(CreateScannerOperator)
+    bpy.utils.register_class(TriggerAllScansOperator)
+    bpy.utils.register_class(ControlPanel)
+    bpy.utils.register_class(SensorPanel)
 
 def unregister_otia_panel():
-    bpy.utils.unregister_class(Sensor_Panel)
-    bpy.utils.unregister_class(CreateScannerOperator)
+    bpy.utils.unregister_class(SensorPanel)
+    bpy.utils.unregister_class(TriggerAllScansOperator)
+    bpy.utils.unregister_class(ControlPanel)
     unregister_properties()

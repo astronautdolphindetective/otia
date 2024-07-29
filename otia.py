@@ -16,10 +16,12 @@ if str(project_root) not in sys.path:
 
 print("sys.path after:", sys.path)
 
-from sensor.scanner_base import register_base_scanner, unregister_base_scanner
+#from sensor.models.lidar.scanner_base import register_base_scanner, unregister_base_scanner
 from sensor.sensor_selection import register_sensor_selection, unregister_sensor_selection
 from otia_panel.otia_panel import register_otia_panel, unregister_otia_panel
 from output.save_data import register_datasaver, unregister_datasaver
+from sensor.models.lidar.lidar_creator import register_create_scanner, unregister_create_scanner
+from sensor.models.cam.camera_creator import regist_camera_creator
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -35,8 +37,10 @@ def frame_change_handler(scene):
 
 def register():
     try:
+        regist_camera_creator()
+        register_create_scanner()
         register_otia_panel()
-        register_base_scanner()
+        #register_base_scanner()
         register_datasaver()
         register_sensor_selection()
     except Exception as e:
@@ -56,8 +60,9 @@ def register():
 
 def unregister():
     try:
+        unregister_create_scanner()
         unregister_otia_panel()
-        unregister_base_scanner()
+        #unregister_base_scanner()
         unregister_datasaver()
         unregister_sensor_selection()
     except Exception as e:
