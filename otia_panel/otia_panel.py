@@ -48,7 +48,6 @@ class TriggerAllScansOperator(bpy.types.Operator):
             return {'CANCELLED'}
 
         # Loop through all objects in the LiDAR collection
-
         for obj in lidar_collection.objects:
             if obj.type == 'EMPTY':
                 operator_idname = f"object.custom_raycast_{obj.name}"
@@ -78,7 +77,6 @@ class SetFolderPathOperator(bpy.types.Operator):
         context.window_manager.fileselect_add(self)
         return {'RUNNING_MODAL'}
 
-
 class ControlPanel(bpy.types.Panel):
     bl_label = "Control Panel"
     bl_idname = "OBJECT_PT_control_panel"
@@ -92,10 +90,30 @@ class ControlPanel(bpy.types.Panel):
         layout.operator("object.trigger_all_scans", text="Single Scan")
         layout.prop(context.scene, "folder_path", text="Folder Path")
         layout.operator("object.set_folder_path", text="Select Output Folder")
+        layout.operator("object.start_simulation", text="Start Simulation")
+
+class StartSimulationOperator(bpy.types.Operator):
+    bl_idname = "object.start_simulation"
+    bl_label = "Start Simulation"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        bpy.app.handlers.frame_change_post.append(simulate)
+        bpy.ops.screen.animation_play()
+        return {'FINISHED'}
+
+class StopSimulationOperator(bpy.types.Operator):
+    bl_idname = "object.stop_simulation"
+    bl_label = "Stop Simulation"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        bpy.ops.screen.animation_cancel()
+        if simulate in bpy.app.handlers.frame_change_post:
+            bpy.app.handlers.frame_change_post.remove(simulate)
+        return {'FINISHED'}
 
 
-
-# Define the Panel to create and display sensors
 class SensorPanel(bpy.types.Panel):
     bl_label = "Sensor"
     bl_idname = "OBJECT_PT_sensor_panel"
@@ -142,8 +160,20 @@ class SensorPanel(bpy.types.Panel):
 
             box.operator("camera.create_update")
 
-def register_properties():
+def simulate(scene):
+    current_frame = scene.frame_current
+    end_frame = scene.frame_end
 
+    bpy.ops.object.trigger_all_scans()
+
+    if current_frame >= end_frame:
+        # Stop the simulation when reaching the end frame
+        bpy.ops.screen.animation_cancel()
+        if simulate in bpy.app.handlers.frame_change_post:
+            bpy.app.handlers.frame_change_post.remove(simulate)
+        logger.info("Simulation ended at frame %d", current_frame)
+
+def register_properties():
     bpy.types.Scene.folder_path = bpy.props.StringProperty(
         name="Folder Path",
         description="Path to save files",
@@ -187,10 +217,10 @@ def register_properties():
                 ))
 
 def unregister_properties():
+    del bpy.types.Scene.folder_path
     del bpy.types.Scene.sensor_selection_dropdown
     del bpy.types.Scene.lidar_selection_dropdown
     del bpy.types.Scene.sensor_name
-    del bpy.types.Scene.sensor_mode
 
     for lidar in lidar_data.values():
         for param_name, param_info in lidar["parameters"].items():
@@ -200,13 +230,18 @@ def unregister_properties():
 def register_otia_panel():
     register_properties()
     bpy.utils.register_class(TriggerAllScansOperator)
-    bpy.utils.register_class(ControlPanel)
     bpy.utils.register_class(SensorPanel)
+    bpy.utils.register_class(ControlPanel)
     bpy.utils.register_class(SetFolderPathOperator)
+    bpy.utils.register_class(StartSimulationOperator)
+    bpy.utils.register_class(StopSimulationOperator)
 
 def unregister_otia_panel():
     bpy.utils.unregister_class(SensorPanel)
     bpy.utils.unregister_class(TriggerAllScansOperator)
     bpy.utils.unregister_class(ControlPanel)
     bpy.utils.unregister_class(SetFolderPathOperator)
+    bpy.utils.unregister_class(StartSimulationOperator)
+    bpy.utils.unregister_class(StopSimulationOperator)
     unregister_properties()
+
