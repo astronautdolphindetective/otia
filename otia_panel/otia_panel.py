@@ -1,11 +1,7 @@
 import bpy
 import os
 import json
-import bmesh
 import logging
-import numpy as np
-from math import pi, sin, cos
-from mathutils import Vector
 from pathlib import Path
 import sys
 
@@ -21,7 +17,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 def get_lidar_parameters():
-    filepath = os.path.join(project_root, "sensor","models", "lidar", "models.json")
+    filepath = os.path.join(project_root, "sensor", "models", "lidar", "models.json")
     try:
         with open(filepath, 'r') as file:
             data = json.load(file)
@@ -41,19 +37,16 @@ class TriggerAllScansOperator(bpy.types.Operator):
     def execute(self, context):
         logger.info("Triggering all scans")
 
-        # Ensure the LiDAR collection exists
         lidar_collection = bpy.data.collections.get("LiDAR")
         if not lidar_collection:
             self.report({'ERROR'}, "LiDAR collection not found")
             return {'CANCELLED'}
 
-        # Loop through all objects in the LiDAR collection
         for obj in lidar_collection.objects:
             if obj.type == 'EMPTY':
                 operator_idname = f"object.custom_raycast_{obj.name}"
                 logger.info("Triggering operator: %s", operator_idname)
                 try:
-                    # Call the operator
                     eval(f"bpy.ops.object.custom_raycast_{obj.name}()")
                     logger.info(f"Triggered scan for {obj.name}")
                 except Exception as e:
@@ -98,8 +91,17 @@ class StartSimulationOperator(bpy.types.Operator):
     bl_options = {'REGISTER', 'UNDO'}
 
     def execute(self, context):
-        bpy.app.handlers.frame_change_post.append(simulate)
+        # Set the current frame to the start frame
+        scene = context.scene
+        scene.frame_set(scene.frame_start)
+        
+        # Add the frame change handler
+        if simulate not in bpy.app.handlers.frame_change_post:
+            bpy.app.handlers.frame_change_post.append(simulate)
+        
+        # Start the animation playback
         bpy.ops.screen.animation_play()
+        
         return {'FINISHED'}
 
 class StopSimulationOperator(bpy.types.Operator):
@@ -112,7 +114,6 @@ class StopSimulationOperator(bpy.types.Operator):
         if simulate in bpy.app.handlers.frame_change_post:
             bpy.app.handlers.frame_change_post.remove(simulate)
         return {'FINISHED'}
-
 
 class SensorPanel(bpy.types.Panel):
     bl_label = "Sensor"
