@@ -29,6 +29,59 @@ def get_lidar_parameters():
 
 lidar_data = get_lidar_parameters()
 
+def render_cameras(scene):
+    # Get the Cameras collection
+    camera_collection = bpy.data.collections.get("Cameras")
+    if not camera_collection:
+        logger.error("Cameras collection not found")
+        return
+    
+    # Ensure output path is set
+    output_folder = scene.folder_path
+    if not output_folder or not os.path.isdir(output_folder):
+        logger.error("Output folder path is not set or does not exist")
+        return
+
+    # Ensure render settings are configured correctly
+    scene.render.image_settings.file_format = 'PNG'
+    scene.render.use_file_extension = True
+    
+    # Render all frames for each camera
+    for obj in camera_collection.objects:
+        if obj.type == 'CAMERA':
+            # Set the current camera
+            scene.camera = obj
+
+            # Render each frame
+            for frame_number in range(scene.frame_start, scene.frame_end + 1):
+                scene.frame_set(frame_number)
+                render_path = os.path.join(output_folder, f"{obj.name}_frame_{frame_number}.png")
+                scene.render.filepath = render_path
+                
+                # Perform rendering
+                logger.info(f"Rendering camera: {obj.name} at frame {frame_number} to {render_path}")
+                bpy.ops.render.render(write_still=True)
+
+def simulate(scene):
+    # Ensure the simulation handler runs properly
+    if simulate not in bpy.app.handlers.frame_change_post:
+        bpy.app.handlers.frame_change_post.append(simulate)
+
+    current_frame = scene.frame_current
+    end_frame = scene.frame_end
+
+    bpy.ops.object.trigger_all_scans()
+
+    if current_frame >= end_frame:
+        # Stop the simulation
+        bpy.ops.screen.animation_cancel()
+        if simulate in bpy.app.handlers.frame_change_post:
+            bpy.app.handlers.frame_change_post.remove(simulate)
+        logger.info("Simulation ended at frame %d", current_frame)
+        
+        # Render all camera images
+        render_cameras(scene)
+
 class TriggerAllScansOperator(bpy.types.Operator):
     bl_idname = "object.trigger_all_scans"
     bl_label = "Trigger All Scans"
@@ -128,7 +181,6 @@ class SensorPanel(bpy.types.Panel):
 
         layout.label(text="Sensors")
 
-        # Show sensor creation settings
         box = layout.box()
         box.prop(scene, "sensor_selection_dropdown", text="Sensor Type")
 
@@ -160,19 +212,6 @@ class SensorPanel(bpy.types.Panel):
             box.prop(camera_settings, "sensor_fit")
 
             box.operator("camera.create_update")
-
-def simulate(scene):
-    current_frame = scene.frame_current
-    end_frame = scene.frame_end
-
-    bpy.ops.object.trigger_all_scans()
-
-    if current_frame >= end_frame:
-        # Stop the simulation when reaching the end frame
-        bpy.ops.screen.animation_cancel()
-        if simulate in bpy.app.handlers.frame_change_post:
-            bpy.app.handlers.frame_change_post.remove(simulate)
-        logger.info("Simulation ended at frame %d", current_frame)
 
 def register_properties():
     bpy.types.Scene.folder_path = bpy.props.StringProperty(
