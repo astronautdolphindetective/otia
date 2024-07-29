@@ -3,5 +3,4 @@ create base
 create path based on ground
 automatic render camera
 implement other scanner to test for parameters
-create simulation function
 create folder selecetion where the files are saved to

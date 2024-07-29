@@ -52,10 +52,8 @@ def save_hit_locations_as_numpy(hit_locations, folder_path, file_name="hit_locat
         file_path = os.path.join(folder_path, file_name)
 
         np.save(file_path, hit_locations_array)
-        logger.info("Saved hit locations to %s", file_path)
     except Exception as e:
-        logger.error("Failed to save hit locations: %s", str(e))
-
+        pass
 
 
 def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
@@ -69,7 +67,6 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
             return self.perform_scan(context)
 
         def perform_scan(self, context):
-            logger.info("Scanning the scene")
             scene = context.scene
             outpath = None
 
@@ -107,11 +104,12 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
                     loc_relative = world_matrix.inverted() @ loc
                     hit_locations.append(Vector(loc_relative))
 
-            logger.info("Generated %d hit locations", len(hit_locations))
 
             save_hit_locations_as_numpy(hit_locations, outpath, f"{scanner_name}{current_frame}")
 
             self.create_points(hit_locations, scanner_base)
+
+            return {'FINISHED'}
 
         def create_points(self, locations, scanner_base):
             # Ensure the "Scans" collection exists
@@ -139,7 +137,6 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
             bpy.context.view_layer.objects.active = obj
             obj.select_set(True)
 
-            logger.info("Created point cloud with %d points", len(locations))
 
         def clear_points(self, context):
             scene = context.scene
@@ -148,11 +145,9 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
                 for obj in list(scans_collection.objects):
                     if obj.name.startswith("RaycastPoints"):
                         bpy.data.objects.remove(obj, do_unlink=True)
-                logger.info("Cleared previous point cloud objects")
 
     # Register the operator class
     bpy.utils.register_class(CustomRaycastOperator)
-    logger.info("New custom raycast operator was created")
     return CustomRaycastOperator
 
 

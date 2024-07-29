@@ -244,4 +244,3 @@ def unregister_otia_panel():
     bpy.utils.unregister_class(StartSimulationOperator)
     bpy.utils.unregister_class(StopSimulationOperator)
     unregister_properties()
-
