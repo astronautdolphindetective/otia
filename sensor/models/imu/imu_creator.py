@@ -108,7 +108,7 @@ class CreateImuOperator(bpy.types.Operator):
 
     def execute(self, context):
 
-        sensor_name = context.scene.sensor_name
+        sensor_name = context.scene.imu_name
 
         logger.info("imu: %s", sensor_name)
 

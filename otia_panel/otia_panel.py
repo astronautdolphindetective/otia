@@ -224,17 +224,22 @@ class SensorPanel(bpy.types.Panel):
                 for param_name, param_info in parameters.items():
                     prop_name = f"lidar_{param_name}"
                     box.prop(scene, prop_name, text=param_info["description"])
-            box.prop(scene, "sensor_name", text="Sensor Name")
+                box.prop(scene, "lidar_name", text="Sensor Name")
+                box.prop(scene, "lidar_frame_id",text="ROS Frame Id")
+                box.prop(scene, "lidar_publisher",text="ROS publisher")
+                box.prop(scene, "lidar_hz",text="HZ")
             box.operator("object.create_scanner", text="Create Scanner")
 
         elif selected_sensor == 'IMU':
-            box.prop(scene, "sensor_name", text="Sensor Name")
+            box.prop(scene, "imu_name", text="Sensor Name")
+            box.prop(scene, "imu_frame_id",text="ROS Frame Id")
+            box.prop(scene, "imu_publisher",text="ROS publisher")
+            box.prop(scene, "imu_hz",text="HZ")
             box.operator("object.create_imu", text="Create IMU")
 
         elif selected_sensor == 'CAM':
             camera_settings = scene.camera_settings
 
-            box.prop(camera_settings, "name", text="Camera Name")
             box.prop(camera_settings, "lens")
             box.prop(camera_settings, "sensor_width")
             box.prop(camera_settings, "location")
@@ -245,7 +250,10 @@ class SensorPanel(bpy.types.Panel):
             box.prop(camera_settings, "shift_x")
             box.prop(camera_settings, "shift_y")
             box.prop(camera_settings, "sensor_fit")
-
+            box.prop(scene, "cam_frame_id")
+            box.prop(scene, "cam_publisher")
+            box.prop(scene, "cam_hz")
+            box.prop(camera_settings, "name", text="Camera Name")
             box.operator("camera.create_update")
 
 def register_properties():
@@ -267,11 +275,80 @@ def register_properties():
         items=[(key, value["name"], value["description"]) for key, value in lidar_data.items()]
     )
 
-    bpy.types.Scene.sensor_name = bpy.props.StringProperty(
+    bpy.types.Scene.lidar_name = bpy.props.StringProperty(
         name="Sensor Name",
         description="Name of the sensor",
-        default="New Sensor"
+        default="New LiDAR"
     )
+
+    bpy.types.Scene.imu_name = bpy.props.StringProperty(
+        name="Sensor Name",
+        description="Name of the sensor",
+        default="New IMU"
+    )
+
+    bpy.types.Scene.lidar_frame_id = bpy.props.StringProperty(
+        name="ROS Frame Id",
+        description="frame_id",
+        default="base_index"
+    )
+
+    bpy.types.Scene.lidar_publisher = bpy.props.StringProperty(
+        name="ROS Publisher",
+        description="ROS Publisher",
+        default="publisher/lidar"
+    )
+
+    bpy.types.Scene.imu_frame_id = bpy.props.StringProperty(
+        name="ROS Frame Id",
+        description="frame_id",
+        default="base_index"
+    )
+
+    bpy.types.Scene.imu_publisher = bpy.props.StringProperty(
+        name="ROS Publisher",
+        description="ROS Publisher",
+        default="publisher/imu"
+    )
+
+    bpy.types.Scene.cam_frame_id = bpy.props.StringProperty(
+        name="ROS Frame Id",
+        description="frame_id",
+        default="base_index"
+    )
+
+    bpy.types.Scene.cam_publisher = bpy.props.StringProperty(
+        name="ROS Publisher",
+        description="ROS Publisher",
+        default="publisher/imu"
+    )
+    bpy.types.Scene.imu_hz = bpy.props.FloatProperty(
+        name="IMU Frequency",
+        description="Frequency of IMU data publication in Hz",
+        default=10.0,
+        min=0.0,
+        max=1000.0,
+        precision=2
+    )
+
+    bpy.types.Scene.lidar_hz = bpy.props.FloatProperty(
+        name="LiDAR Frequency",
+        description="Frequency of LiDAR data publication in Hz",
+        default=10.0,
+        min=0.0,
+        max=1000.0,
+        precision=2
+    )
+
+    bpy.types.Scene.cam_hz = bpy.props.FloatProperty(
+        name="Camera Frequency",
+        description="Frequency of Camera data publication in Hz",
+        default=10.0,
+        min=0.0,
+        max=1000.0,
+        precision=2
+    )
+
 
     for lidar in lidar_data.values():
         for param_name, param_info in lidar["parameters"].items():

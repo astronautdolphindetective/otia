@@ -156,7 +156,7 @@ class CreateScannerOperator(bpy.types.Operator):
         if selected_lidar:
             parameters = lidar_data[selected_lidar]["parameters"]
             params = {param_name: getattr(scene, f"lidar_{param_name}") for param_name in parameters.keys()}
-            sensor_name = scene.sensor_name
+            sensor_name = scene.lidar_name
 
             # Create the scanner base
             bpy.ops.object.select_all(action='DESELECT')
