@@ -99,8 +99,8 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
                     hit_locations.append(Vector(loc_relative))
 
             # Create a folder for the scanner if it doesn't exist
-            scanner_folder = os.path.join(outpath, scanner_name)
-            save_hit_locations_as_numpy(hit_locations, scanner_folder, f"hit_locations_frame_{current_frame}.npy")
+            scanner_folder = os.path.join(outpath, "lidar", scanner_name)
+            save_hit_locations_as_numpy(hit_locations, scanner_folder, f"{current_frame}.npy")
 
             self.create_points(hit_locations, scanner_base)
 

@@ -16,7 +16,7 @@ def save_imu_data(imu_data, folder_path, file_name="imu.npy"):
     try:
         Path(folder_path).mkdir(parents=True, exist_ok=True)
         imu_array = np.array(imu_data)
-        file_path = os.path.join(folder_path, file_name)
+        file_path = os.path.join(folder_path, "IMU", file_name)
         np.save(file_path, imu_array)
         logger.info(f"IMU data saved to {file_path}")
     except Exception as e:

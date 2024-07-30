@@ -50,7 +50,7 @@ def render_cameras(scene):
     for obj in camera_collection.objects:
         if obj.type == 'CAMERA':
             # Create a directory for the current camera
-            camera_folder = os.path.join(output_folder, obj.name)
+            camera_folder = os.path.join(output_folder, "Camera", obj.name)
             os.makedirs(camera_folder, exist_ok=True)
 
             # Set the current camera
@@ -59,7 +59,7 @@ def render_cameras(scene):
             # Render each frame
             for frame_number in range(scene.frame_start, scene.frame_end + 1):
                 scene.frame_set(frame_number)
-                render_path = os.path.join(camera_folder, f"{obj.name}_frame_{frame_number}.png")
+                render_path = os.path.join(camera_folder, f"{frame_number}.png")
                 scene.render.filepath = render_path
                 
                 # Perform rendering
