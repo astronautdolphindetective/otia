@@ -84,8 +84,34 @@ def simulate(scene):
             bpy.app.handlers.frame_change_post.remove(simulate)
         logger.info("Simulation ended at frame %d", current_frame)
         
-        # Render all camera images
+        # Render all imus and cameras 
+        bpy.ops.object.trigger_all_imus()
         render_cameras(scene)
+
+class TriggerAllImuOperator(bpy.types.Operator):
+    bl_idname = "object.trigger_all_imus"
+    bl_label = "Trigger All imu"
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        logger.info("Triggering all imus")
+
+        imu_collection = bpy.data.collections.get("IMU")
+        if not imu_collection:
+            self.report({'ERROR'}, "IMU collection not found")
+            return {'CANCELLED'}
+
+        for obj in imu_collection.objects:
+            if obj.type == 'EMPTY':
+                operator_idname = f"object.imu_{obj.name}"
+                logger.info("Triggering operator: %s", operator_idname)
+                try:
+                    eval(f"bpy.ops.object.imu_{obj.name}()")
+                    logger.info(f"Triggered imu reading for {obj.name}")
+                except Exception as e:
+                    logger.error(f"Failed to trigger scan for {obj.name}: {str(e)}")
+
+        return {'FINISHED'}
 
 class TriggerAllScansOperator(bpy.types.Operator):
     bl_idname = "object.trigger_all_scans"
@@ -201,6 +227,10 @@ class SensorPanel(bpy.types.Panel):
             box.prop(scene, "sensor_name", text="Sensor Name")
             box.operator("object.create_scanner", text="Create Scanner")
 
+        elif selected_sensor == 'IMU':
+            box.prop(scene, "sensor_name", text="Sensor Name")
+            box.operator("object.create_imu", text="Create IMU")
+
         elif selected_sensor == 'CAM':
             camera_settings = scene.camera_settings
 
@@ -275,6 +305,7 @@ def unregister_properties():
 def register_otia_panel():
     register_properties()
     bpy.utils.register_class(TriggerAllScansOperator)
+    bpy.utils.register_class(TriggerAllImuOperator)
     bpy.utils.register_class(SensorPanel)
     bpy.utils.register_class(ControlPanel)
     bpy.utils.register_class(SetFolderPathOperator)
@@ -284,6 +315,7 @@ def register_otia_panel():
 def unregister_otia_panel():
     bpy.utils.unregister_class(SensorPanel)
     bpy.utils.unregister_class(TriggerAllScansOperator)
+    bpy.utils.unregister_class(TriggerAllImuOperator)
     bpy.utils.unregister_class(ControlPanel)
     bpy.utils.unregister_class(SetFolderPathOperator)
     bpy.utils.unregister_class(StartSimulationOperator)
