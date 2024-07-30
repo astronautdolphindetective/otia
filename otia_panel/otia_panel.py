@@ -165,6 +165,7 @@ class ControlPanel(bpy.types.Panel):
         layout = self.layout
         layout.label(text="Control Panel")
         layout.operator("object.trigger_all_scans", text="Single Scan")
+        layout.prop(context.scene, "milliseconds_per_frame", text="Milliseconds per Frame")
         layout.prop(context.scene, "folder_path", text="Folder Path")
         layout.operator("object.set_folder_path", text="Select Output Folder")
         layout.operator("object.start_simulation", text="Start Simulation")
@@ -322,33 +323,43 @@ def register_properties():
         description="ROS Publisher",
         default="publisher/imu"
     )
-    bpy.types.Scene.imu_hz = bpy.props.FloatProperty(
+    bpy.types.Scene.imu_hz = bpy.props.IntProperty(
         name="IMU Frequency",
         description="Frequency of IMU data publication in Hz",
-        default=10.0,
-        min=0.0,
-        max=1000.0,
-        precision=2
+        default=10,
+        min=0,
+        max=1000,
     )
 
-    bpy.types.Scene.lidar_hz = bpy.props.FloatProperty(
+    bpy.types.Scene.lidar_hz = bpy.props.IntProperty(
         name="LiDAR Frequency",
         description="Frequency of LiDAR data publication in Hz",
-        default=10.0,
-        min=0.0,
-        max=1000.0,
-        precision=2
+        default=10,
+        min=0,
+        max=1000
     )
 
-    bpy.types.Scene.cam_hz = bpy.props.FloatProperty(
+    bpy.types.Scene.cam_hz = bpy.props.IntProperty(
         name="Camera Frequency",
         description="Frequency of Camera data publication in Hz",
-        default=10.0,
-        min=0.0,
-        max=1000.0,
-        precision=2
+        default=10,
+        min=0,
+        max=1000,
     )
 
+    bpy.types.Scene.milliseconds_per_frame= bpy.props.IntProperty(
+        name="Milliseconds per Frame",
+        description="Milliseconds per Frame",
+        default=10,
+        min=1,
+        max=1000,
+    )
+
+    bpy.types.Scene.simulation_running = bpy.props.BoolProperty(
+        name="Simulation is running",
+        description="turns true if simulation is running",
+        default=False
+    )
 
     for lidar in lidar_data.values():
         for param_name, param_info in lidar["parameters"].items():
