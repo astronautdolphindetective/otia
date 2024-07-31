@@ -17,6 +17,7 @@ if str(project_root) not in sys.path:
 print("sys.path after:", sys.path)
 
 from sensor.models.lidar.lidar_functionality import *
+from sensor.models.lidar.ros_info import save_lidar_ros_info
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -38,6 +39,9 @@ def get_lidar_parameters():
 
 lidar_data = get_lidar_parameters()
 
+
+
+
 def save_hit_locations_as_numpy(hit_locations, folder_path, file_name="hit_locations.npy"):
     try:
         Path(folder_path).mkdir(parents=True, exist_ok=True)
@@ -52,17 +56,30 @@ def save_hit_locations_as_numpy(hit_locations, folder_path, file_name="hit_locat
 
 def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
 
+    outpath = bpy.context.scene.folder_path
+    logger.info("outpath %s", outpath)
+    scanner_folder = os.path.join(outpath, "lidar", scanner_name)
+    save_lidar_ros_info(scanner_folder)
+
     class CustomRaycastOperator(bpy.types.Operator):
         bl_idname = f"object.custom_raycast_{scanner_name}"
         bl_label = f"Custom Raycast {scanner_name}"
         bl_options = {'REGISTER', 'UNDO'}
+        hz = bpy.context.scene.lidar_hz
 
         def execute(self, context):
             return self.perform_scan(context)
 
         def perform_scan(self, context):
+
             scene = context.scene
             outpath = None
+            
+            current_frame = bpy.context.scene.frame_current
+             
+            if scene.simulation_running and scene.milliseconds_per_frame * current_frame % self.hz != 0:
+                return {"FINISHED"}
+
 
             try:
                 outpath = context.scene.folder_path
@@ -82,7 +99,6 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
             bpy.context.view_layer.update()
 
             max_distance = parameters['max_distance']
-            current_frame = bpy.context.scene.frame_current
             res = functions[selected_lidar](current_frame, parameters)
 
             rotation_matrix = world_matrix.to_3x3()

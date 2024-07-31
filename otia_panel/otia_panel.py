@@ -50,7 +50,7 @@ def render_cameras(scene):
     for obj in camera_collection.objects:
         if obj.type == 'CAMERA':
             # Create a directory for the current camera
-            camera_folder = os.path.join(output_folder, "Camera", obj.name)
+            camera_folder = os.path.join(output_folder, "cam", obj.name)
             os.makedirs(camera_folder, exist_ok=True)
 
             # Set the current camera
@@ -68,6 +68,8 @@ def render_cameras(scene):
 
 
 def simulate(scene):
+    logger.info("STARTING THE SIMULATION")
+    scene.simulation_running = True
     # Ensure the simulation handler runs properly
     if simulate not in bpy.app.handlers.frame_change_post:
         bpy.app.handlers.frame_change_post.append(simulate)
@@ -87,6 +89,10 @@ def simulate(scene):
         # Render all imus and cameras 
         bpy.ops.object.trigger_all_imus()
         render_cameras(scene)
+    
+    logger.info("FINISHED THE SIMULATION")
+    scene.simulation_running = False
+
 
 class TriggerAllImuOperator(bpy.types.Operator):
     bl_idname = "object.trigger_all_imus"
@@ -254,7 +260,7 @@ class SensorPanel(bpy.types.Panel):
             box.prop(scene, "cam_frame_id")
             box.prop(scene, "cam_publisher")
             box.prop(scene, "cam_hz")
-            box.prop(camera_settings, "name", text="Camera Name")
+            box.prop(scene, "cam_name", text="Camera Name")
             box.operator("camera.create_update")
 
 def register_properties():
@@ -279,13 +285,19 @@ def register_properties():
     bpy.types.Scene.lidar_name = bpy.props.StringProperty(
         name="Sensor Name",
         description="Name of the sensor",
-        default="New LiDAR"
+        default="lidar"
+    )
+
+    bpy.types.Scene.cam_name = bpy.props.StringProperty(
+        name="Sensor Name",
+        description="Name of the sensor",
+        default="cam"
     )
 
     bpy.types.Scene.imu_name = bpy.props.StringProperty(
         name="Sensor Name",
         description="Name of the sensor",
-        default="New IMU"
+        default="imu"
     )
 
     bpy.types.Scene.lidar_frame_id = bpy.props.StringProperty(

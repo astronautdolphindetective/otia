@@ -8,6 +8,9 @@ from pathlib import Path
 path = Path(bpy.data.filepath).parent
 project_root = path / "otia"
 
+
+from sensor.models.imu.ros_info import save_imu_ros_info
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -24,6 +27,12 @@ def save_imu_data(imu_data, folder_path, file_name="imu.npy"):
 
 def create_imu_operator(imu_name):
     """Creates a custom IMU operator for the given IMU name."""
+
+    outpath = bpy.context.scene.folder_path
+    logger.info("outpath %s", outpath)
+    scanner_folder = os.path.join(outpath, "lidar", imu_name)
+    save_imu_ros_info(scanner_folder)
+
     class ImuOperator(bpy.types.Operator):
         bl_idname = f"object.imu_{imu_name}"
         bl_label = f"IMU {imu_name}"

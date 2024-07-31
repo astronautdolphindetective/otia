@@ -1,7 +1,20 @@
 import bpy
 import logging
 from bpy.props import FloatProperty, FloatVectorProperty, EnumProperty, StringProperty, PointerProperty
+import os
+import json
+from pathlib import Path
+import sys
 
+path = Path(bpy.data.filepath).parent
+project_root = path / "otia"
+
+if str(project_root) not in sys.path:
+    sys.path.append(str(project_root))
+
+print("sys.path after:", sys.path)
+
+from sensor.models.cam.ros_info import save_cam_ros_info
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
@@ -86,6 +99,9 @@ class CameraSettings(bpy.types.PropertyGroup):
         default='AUTO'
     )
 
+
+
+
 class CAMERA_OT_create_update(bpy.types.Operator):
     bl_label = "Create/Update Camera"
     bl_idname = "camera.create_update"
@@ -107,6 +123,13 @@ class CAMERA_OT_create_update(bpy.types.Operator):
             camera_data = bpy.data.cameras.new(name=camera_settings.name)
             camera_object = bpy.data.objects.new(name=camera_settings.name, object_data=camera_data)
             camera_collection.objects.link(camera_object)
+
+            # Save ROS data
+            outpath = bpy.context.scene.folder_path
+            logger.info("outpath %s", outpath)
+            scanner_folder = os.path.join(outpath, "cam", camera_settings.name)
+            save_cam_ros_info(scanner_folder)
+
         else:
             # Update the existing camera object
             camera_object = bpy.data.objects[camera_settings.name]
