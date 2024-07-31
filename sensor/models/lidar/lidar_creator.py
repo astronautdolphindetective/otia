@@ -70,16 +70,15 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
         def execute(self, context):
             return self.perform_scan(context)
 
-        def perform_scan(self, context):
 
+        def perform_scan(self, context):
             scene = context.scene
             outpath = None
             
             current_frame = bpy.context.scene.frame_current
-             
+            
             if scene.simulation_running and scene.milliseconds_per_frame * current_frame % self.hz != 0:
                 return {"FINISHED"}
-
 
             try:
                 outpath = context.scene.folder_path
@@ -102,7 +101,7 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
             res = functions[selected_lidar](current_frame, parameters)
 
             rotation_matrix = world_matrix.to_3x3()
-            hit_locations = []
+            hit_data = []
 
             for e in res:
                 direction_local = Vector(e).normalized()
@@ -112,15 +111,41 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
 
                 if hit and (loc - position).length <= max_distance:
                     loc_relative = world_matrix.inverted() @ loc
-                    hit_locations.append(Vector(loc_relative))
+                    intensity = 1.0  # Default intensity value
+
+                    if obj_hit and obj_hit.active_material:
+                        mat = obj_hit.active_material
+                        if mat.use_nodes:
+                            # Look for the Principled BSDF node
+                            principled_node = next((node for node in mat.node_tree.nodes if node.type == 'BSDF_PRINCIPLED'), None)
+                            if principled_node:
+                                # Get the base color from the Principled BSDF node's input
+                                base_color_socket = principled_node.inputs.get('Base Color')
+                                if base_color_socket:
+                                    color = base_color_socket.default_value
+                                    intensity = sum(color[:3]) / 3.0  # Average RGB value
+                        else:
+                            color = mat.diffuse_color
+                            intensity = sum(color[:3]) / 3.0  # Average RGB value
+
+                    hit_data.append((*loc_relative, intensity))
 
             # Create a folder for the scanner if it doesn't exist
             scanner_folder = os.path.join(outpath, "lidar", scanner_name)
-            save_hit_locations_as_numpy(hit_locations, scanner_folder, f"{current_frame}.npy")
+            Path(scanner_folder).mkdir(parents=True, exist_ok=True)
 
-            self.create_points(hit_locations, scanner_base)
+            # Convert the list to a NumPy array
+            hit_data_array = np.array(hit_data)
+
+            # Save the hit data array including intensities
+            file_path = os.path.join(scanner_folder, f"{current_frame}.npy")
+            np.save(file_path, hit_data_array)
+
+            # Update the points in the scene (optional visualization)
+            self.create_points(hit_data_array[:, :3], scanner_base)
 
             return {'FINISHED'}
+ 
 
         def create_points(self, locations, scanner_base):
             # Ensure the "Scans" collection exists
@@ -134,27 +159,31 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
                 if obj.name.startswith(f"{scanner_name}"):
                     bpy.data.objects.remove(obj, do_unlink=True)
 
+            # Create a new mesh for the point cloud
             mesh = bpy.data.meshes.new(name=f"{scanner_name}")
             obj = bpy.data.objects.new(f"{scanner_name}", mesh)
             scans_collection.objects.link(obj)
 
+            # Create the point cloud geometry using BMesh
             bm = bmesh.new()
+            
+            # Convert numpy arrays to Blender Vectors for transformation
             for loc in locations:
-                loc_absolute = scanner_base.matrix_world @ loc
+                # Convert the numpy array to a Blender Vector
+                loc_vector = Vector(loc[:3])
+                # Apply the matrix transformation
+                loc_absolute = scanner_base.matrix_world @ loc_vector
+                # Add the transformed location as a vertex
                 bm.verts.new(loc_absolute)
+            
             bm.to_mesh(mesh)
             bm.free()
 
+            # Update the view layer to reflect changes
             bpy.context.view_layer.objects.active = obj
             obj.select_set(True)
 
-        def clear_points(self, context):
-            scene = context.scene
-            scans_collection = bpy.data.collections.get("Scans")
-            if scans_collection:
-                for obj in list(scans_collection.objects):
-                    if obj.name.startswith("RaycastPoints"):
-                        bpy.data.objects.remove(obj, do_unlink=True)
+
 
     # Register the operator class
     bpy.utils.register_class(CustomRaycastOperator)

@@ -28,5 +28,5 @@ def livox_mid_40(current_frame, params):
             x = r * np.cos(q)
             y = r * np.sin(q)
 
-            results.append((1,x,y))
+            results.append((x,1,y))
     return results
