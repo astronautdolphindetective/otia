@@ -11,12 +11,12 @@ def livox_mid_40(current_frame, params):
 
     angle = 38.4 / 2
     radius = np.tan(np.radians(angle))
-    a = radius / 2
+    a = radius #/ 2
     results = []
     start = current_frame * 2.0 * np.pi / k
 
     for i in range(scans):
-        p = k + i
+        p = k + i + current_frame
         vals = [logit(x) for x in np.linspace(0.01, 0.99, density)]
         vals -= np.min(vals)
         vals /= np.max(vals)
@@ -28,5 +28,5 @@ def livox_mid_40(current_frame, params):
             x = r * np.cos(q)
             y = r * np.sin(q)
 
-            results.append((x,1,y))
+            results.append((1,x,y))
     return results
