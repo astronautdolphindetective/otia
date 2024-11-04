@@ -1,3 +1,5 @@
+
+"""
 import bpy
 import bmesh
 import os
@@ -5,6 +7,15 @@ import numpy as np
 from math import pi, sin, cos
 from mathutils import Vector
 import logging
+import sys
+
+#TODO: fix path
+# make it so a lidar specific function can be loaded
+
+project_root = '/home/jan/Workspace/lidar_scanner/otia'
+sys.path.append(project_root)
+
+
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -133,3 +144,4 @@ def register_base_scanner():
 def unregister_base_scanner():
     bpy.utils.unregister_class(CustomRaycastOperator)
     del bpy.types.Scene.CustomRaycastOperator
+"""

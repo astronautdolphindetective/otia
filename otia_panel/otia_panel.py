@@ -5,16 +5,13 @@ import logging
 from pathlib import Path
 import sys
 
-path = Path(bpy.data.filepath).parent
-project_root = path / "otia"
+project_root = '/home/jan/Workspace/lidar_scanner/otia'
+sys.path.append(project_root)
 
-if str(project_root) not in sys.path:
-    sys.path.append(str(project_root))
-
-print("sys.path after:", sys.path)
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
 
 def get_lidar_parameters():
     filepath = os.path.join(project_root, "sensor", "models", "lidar", "models.json")

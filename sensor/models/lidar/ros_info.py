@@ -9,11 +9,10 @@ from mathutils import Vector
 from pathlib import Path
 import sys
 
-path = Path(bpy.data.filepath).parent
-project_root = path / "otia"
 
-if str(project_root) not in sys.path:
-    sys.path.append(str(project_root))
+project_root = '/home/jan/Workspace/lidar_scanner/otia'
+sys.path.append(project_root)
+
 
 print("sys.path after:", sys.path)
 

@@ -8,11 +8,9 @@ from mathutils import Vector
 from pathlib import Path
 import sys
 
-path = Path(bpy.data.filepath).parent
-project_root = path / "otia"
+project_root = '/home/jan/Workspace/lidar_scanner/otia'
+sys.path.append(project_root)
 
-if str(project_root) not in sys.path:
-    sys.path.append(str(project_root))
 
 print("sys.path after:", sys.path)
 
@@ -23,7 +21,9 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 functions = {
-    "livox_mid40": livox_mid_40
+    "livox_mid40": livox_mid_40,
+    "demo": demo,
+    "velodyne_hdl64": velodyne_hdl64
 }
 
 def get_lidar_parameters():
@@ -53,6 +53,7 @@ def save_hit_locations_as_numpy(hit_locations, folder_path, file_name="hit_locat
         np.save(file_path, hit_locations_array)
     except Exception as e:
         logger.error(f"Failed to save hit locations: {e}")
+
 
 def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
 
@@ -127,7 +128,8 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
                         else:
                             color = mat.diffuse_color
                             intensity = sum(color[:3]) / 3.0  # Average RGB value
-
+                    logger.info("intensity %s", intensity)
+                    intensity *= 255
                     hit_data.append((*loc_relative, intensity))
 
             # Create a folder for the scanner if it doesn't exist

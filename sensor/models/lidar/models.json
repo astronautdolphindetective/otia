@@ -29,39 +29,39 @@
             }
         }
     },
-    "velodyne_hdl": {
-        "name": "Velodyne HDL64",
-        "description": "Velodyne HDL64 description",
+    "demo": {
+        "name": "demo",
+        "description": "demo description",
         "parameters": {
             "max_distance": {
                 "type": "float",
-                "description": "Maximum Distance",
+                "description": "param 1",
                 "default": 20.0,
                 "min": 0.1
             },
-            "scans": {
+            "param2": {
                 "type": "int",
-                "description": "Number of Scans",
+                "description": "param 2",
                 "default": 10,
                 "min": 1
+            }
+        }
+    },
+    "velodyne_hdl64": {
+        "name": "velodyne_hdl64",
+        "description": "demo description",
+        "parameters": {
+            "max_distance": {
+                "type": "float",
+                "description": "param 1",
+                "default": 20.0,
+                "min": 0.1
             },
-            "density": {
+            "param2": {
                 "type": "int",
-                "description": "Point Density",
-                "default": 20,
+                "description": "param 2",
+                "default": 10,
                 "min": 1
-            },
-            "k": {
-                "type": "int",
-                "description": "XXXXXX",
-                "default": 3,
-                "min": 0
-            },
-            "X": {
-                "type": "int",
-                "description": "XXXXXX",
-                "default": 3,
-                "min": 0
             }
         }
     }

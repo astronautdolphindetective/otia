@@ -4,9 +4,13 @@ import json
 import logging
 import numpy as np
 from pathlib import Path
+import sys
 
-path = Path(bpy.data.filepath).parent
-project_root = path / "otia"
+project_root = '/home/jan/Workspace/lidar_scanner/otia'
+sys.path.append(project_root)
+
+
+
 
 
 from sensor.models.imu.ros_info import save_imu_ros_info

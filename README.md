@@ -7,10 +7,6 @@ This Blender addon allows for the simulation of Lidar, Camera, and IMU data.
 
 - Easily add new Lidar scanners by implementing a function and specifying the required parameters.
 
-## Future Work
-
-- Automatic conversion of data into ROS bags.
-
 ## TODOs
 
 - Implement automatic path generation.
@@ -18,3 +14,6 @@ This Blender addon allows for the simulation of Lidar, Camera, and IMU data.
 - Implement IMU noise generation: [IMU Noise Model](https://github.com/ethz-asl/kalibr/wiki/IMU-Noise-Model).
 - Add more Lidar scanners.
 - Clean up the code.
+- Make a tutorial
+- framerate is currently calculated wrong
+- create tutorial on how to set this up and use it
