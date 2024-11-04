@@ -5,9 +5,11 @@ import logging
 from pathlib import Path
 import sys
 
-project_root = '/home/jan/Workspace/lidar_scanner/otia'
-sys.path.append(project_root)
 
+#begin preprocessing
+project_root = "/home/jan/Workspace/lidar_scanner2/otia"
+#end preprocessing 
+sys.path.append(project_root)
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)

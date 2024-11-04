@@ -3,8 +3,11 @@ import logging
 from pathlib import Path
 import sys
 import os
+import json
 
-project_root = '/home/jan/Workspace/lidar_scanner/otia'
+#begin preprocessing
+project_root = "/home/jan/Workspace/lidar_scanner2/otia"
+#end preprocessing 
 sys.path.append(project_root)
 
 '''
@@ -31,7 +34,6 @@ bl_info = {
     "category": "Object",
 }
 
-#from sensor.models.lidar.scanner_base import register_base_scanner, unregister_base_scanner
 
 from otia_panel.otia_panel import register_otia_panel, unregister_otia_panel
 from sensor.models.lidar.lidar_creator import register_create_scanner, unregister_create_scanner

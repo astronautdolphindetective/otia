@@ -10,7 +10,9 @@ from pathlib import Path
 import sys
 
 
-project_root = '/home/jan/Workspace/lidar_scanner/otia'
+#begin preprocessing
+project_root = "/home/jan/Workspace/lidar_scanner2/otia"
+#end preprocessing 
 sys.path.append(project_root)
 
 

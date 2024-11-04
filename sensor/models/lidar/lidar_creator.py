@@ -8,7 +8,10 @@ from mathutils import Vector
 from pathlib import Path
 import sys
 
-project_root = '/home/jan/Workspace/lidar_scanner/otia'
+
+#begin preprocessing
+project_root = "/home/jan/Workspace/lidar_scanner2/otia"
+#end preprocessing 
 sys.path.append(project_root)
 
 
@@ -114,6 +117,7 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
                     loc_relative = world_matrix.inverted() @ loc
                     intensity = 1.0  # Default intensity value
 
+
                     if obj_hit and obj_hit.active_material:
                         mat = obj_hit.active_material
                         if mat.use_nodes:
@@ -128,7 +132,8 @@ def create_custom_raycast_operator(scanner_name, parameters, selected_lidar):
                         else:
                             color = mat.diffuse_color
                             intensity = sum(color[:3]) / 3.0  # Average RGB value
-                    logger.info("intensity %s", intensity)
+                    #logger.info("intensity %s", intensity)
+                    logger.info("obj name: %s",obj_hit.name)
                     intensity *= 255
                     hit_data.append((*loc_relative, intensity))
 

@@ -9,14 +9,10 @@ from mathutils import Vector
 from pathlib import Path
 import sys
 
-path = Path(bpy.data.filepath).parent
-project_root = path / "otia"
-
-if str(project_root) not in sys.path:
-    sys.path.append(str(project_root))
-
-print("sys.path after:", sys.path)
-
+#begin preprocessing
+project_root = "/home/jan/Workspace/lidar_scanner2/otia"
+#end preprocessing 
+sys.path.append(project_root)
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
